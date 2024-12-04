@@ -1,46 +1,53 @@
 import { useState, useEffect } from "react";
-import axios from "axios"; // Import axios untuk mengirimkan HTTP request
+import api from "../../utils/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); // Menangani error
+  const [error, ] = useState(""); // Menangani error
 
   // Fungsi untuk menangani login
   const handleLogin = async (e) => {
     e.preventDefault();
-
     try {
-      // Kirim request login ke backend
-      const response = await axios.post("http://localhost:5000/login", {
-        email,
-        password,
-      }, {
-        withCredentials: true, // Menyertakan cookie (refresh token)
-      });
-
-      // Ambil access token dari response
+      const response = await api.post("api/user/login", { email, password });
       const { accessToken } = response.data;
-
-      // Simpan access token ke localStorage untuk penggunaan selanjutnya
-      localStorage.setItem("accessToken", accessToken);
-
-      // Redirect user ke halaman utama (misalnya halaman dashboard)
-      window.location.href = "/utama"; // Ganti dengan route yang sesuai
+  
+      // Simpan access token di localStorage
+      localStorage.setItem("token", accessToken);
+  
+      // Set header Authorization untuk permintaan selanjutnya
+      api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+  
+      // Redirect ke halaman utama
+      window.location.href = "/utama";
     } catch (error) {
-      // Jika ada error (misalnya password salah atau email tidak ditemukan)
-      setError(error.response?.data?.msg || "Terjadi kesalahan");
+      console.error(error.response?.data?.msg || error.message);
+      alert("Login gagal");
     }
   };
+  
+  
+
+  // Mengatur token pada setiap permintaan Axios secara global
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      // Tambahkan token ke header default axios
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      console.log("Token di-set ke Axios:", token);
+    }
+  }, []);
+
   const [images, setImages] = useState({});
 
   useEffect(() => {
     const loadImages = async () => {
-      const importedImages = import.meta.glob('../../assets/imgs/*.{png,jpg,jpeg,svg}');
+      const importedImages = import.meta.glob("../../assets/imgs/*.{png,jpg,jpeg,svg}");
       const imageEntries = await Promise.all(
         Object.entries(importedImages).map(async ([path, importFunc]) => {
           const module = await importFunc();
-          const fileName = path.replace('../../assets/imgs/', ''); // Sesuaikan nama file
+          const fileName = path.replace("../../assets/imgs/", ""); // Sesuaikan nama file
           return [fileName, module.default];
         })
       );
@@ -49,10 +56,10 @@ const Login = () => {
 
     loadImages();
   }, []);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-200">
       <div className="bg-white rounded-lg shadow-md flex max-w-4xl w-full">
-        
         {/* Bagian Kiri dengan Gambar */}
         <div className="w-1/2">
           <img
@@ -61,17 +68,15 @@ const Login = () => {
             className="w-full h-full object-cover rounded-l-lg"
           />
         </div>
-        
+
         {/* Bagian Kanan dengan Form Login */}
         <div className="w-1/2 p-8 bg-white rounded-r-lg justify-center items-center">
           <h2 className="text-2xl font-semibold text-gray-800 mb-2 ml-12">Masuk ke KambingFresh</h2>
           <p className="text-gray-600 mb-6 ml-10">Silahkan Masukkan Email dan Kata Sandi</p>
 
           {/* Error Message */}
-          {error && (
-            <p className="text-red-500 text-sm">{error}</p>
-          )}
-          
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
           <form onSubmit={handleLogin}>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm mb-2">Email</label>

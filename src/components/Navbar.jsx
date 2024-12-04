@@ -1,19 +1,26 @@
-import { useState, useEffect, useRef } from 'react';
-import { IoIosSearch, IoMdCart, IoMdNotifications } from 'react-icons/io';
+import { useState, useEffect, useRef } from "react";
+import { IoIosSearch, IoMdCart, IoMdNotifications } from "react-icons/io";
 import { AiTwotoneShop } from "react-icons/ai";
+import api from "../utils/api"; // Pastikan path sesuai
 
 const Navbar = () => {
   const [images, setImages] = useState({});
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // State untuk kontrol popup
-  const menuRef = useRef(null); // Ref untuk popup
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hasStore, setHasStore] = useState(() => {
+    const savedStatus = localStorage.getItem("hasStore");
+    return savedStatus === "true";
+  });
 
+  const menuRef = useRef(null);
+
+  // Memuat gambar
   useEffect(() => {
     const loadImages = async () => {
-      const importedImages = import.meta.glob('../assets/imgs/*.{png,jpg,jpeg,svg}');
+      const importedImages = import.meta.glob("../assets/imgs/*.{png,jpg,jpeg,svg}");
       const imageEntries = await Promise.all(
         Object.entries(importedImages).map(async ([path, importFunc]) => {
           const module = await importFunc();
-          const fileName = path.replace('../assets/imgs/', ''); 
+          const fileName = path.replace("../assets/imgs/", "");
           return [fileName, module.default];
         })
       );
@@ -23,17 +30,40 @@ const Navbar = () => {
     loadImages();
   }, []);
 
-  // Handle click outside to close menu
+  // Fetch status toko dari backend
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false); // Tutup popup jika klik di luar
+    const fetchStoreStatus = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Token tidak ditemukan");
+
+        const response = await api.get("api/seller/status", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setHasStore(response.data.hasStore);
+        localStorage.setItem("hasStore", response.data.hasStore);
+      } catch (error) {
+        console.error("Gagal mengambil status toko:", error.response?.data || error.message);
+        setHasStore(false);
+        localStorage.removeItem("hasStore");
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    fetchStoreStatus();
+  }, []);
+
+  // Handle click outside untuk menutup menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -58,10 +88,10 @@ const Navbar = () => {
 
         {/* Ikon dan Profil */}
         <div className="flex items-center space-x-4 relative">
-          {/* Ikon lain */}
-          <button 
+          {/* Ikon Toko */}
+          <button
             className="text-gray-300 hover:text-white"
-            onClick={() => setIsMenuOpen(!isMenuOpen)} // Toggle popup
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <AiTwotoneShop className="w-6 h-6" />
           </button>
@@ -86,14 +116,29 @@ const Navbar = () => {
           {/* Popup Menu */}
           {isMenuOpen && (
             <div
-              ref={menuRef} // Attach ref to popup
+              ref={menuRef}
               className="absolute top-10 left-0 w-48 bg-white shadow-lg rounded-lg p-4 z-50"
-              style={{ top: '100%', left: '-20px', zIndex: 50 }}
+              style={{ top: "100%", left: "-20px", zIndex: 50 }}
             >
-              <p className="text-center text-gray-700 font-medium">Anda Belum Memiliki Toko</p>
-             <a href="/pendaftarantoko"> <button className="bg-green-500 text-white font-bold py-2 px-4 mt-4 rounded-md w-full">
-                Daftar Toko
-              </button></a>
+              {hasStore ? (
+                <>
+                  <p className="text-center text-gray-700 font-medium">Toko Anda</p>
+                  <a href="/home">
+                    <button className="bg-blue-500 text-white font-bold py-2 px-4 mt-4 rounded-md w-full">
+                      Masuk Toko
+                    </button>
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p className="text-center text-gray-700 font-medium">Anda Belum Memiliki Toko</p>
+                  <a href="/pendaftarantoko">
+                    <button className="bg-green-500 text-white font-bold py-2 px-4 mt-4 rounded-md w-full">
+                      Daftar Toko
+                    </button>
+                  </a>
+                </>
+              )}
             </div>
           )}
         </div>

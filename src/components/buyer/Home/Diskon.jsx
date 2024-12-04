@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-
+console.log(localStorage.getItem("token"));
 const products = [
   {
     id: 1,

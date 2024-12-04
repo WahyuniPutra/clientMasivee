@@ -26,7 +26,7 @@ function Register() {
     }
   
     try {
-      const response = await axios.post("http://localhost:5000/users", {
+      const response = await axios.post("http://localhost:5000/api/user/regist", {
         name: form.fullName,
         email: form.email,
         password: form.password,

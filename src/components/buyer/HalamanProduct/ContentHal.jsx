@@ -1,26 +1,31 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import api from "../../../utils/api"; // Import api dengan interceptor yang sudah Anda buat
 
 function Content() {
-  // Daftar produk
-  const products = [
-    { id: 1, name: "Kambing Kacang (Ukuran Kecil)", price: "Rp. 2.400.000", image: "5.jpg", farm: "Peternakan Al-Amin", rating: 4.5 },
-    { id: 2, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "4.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 3, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "5.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 4, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "6.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 5, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "7.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 6, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "8.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 7, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "5.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 8, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "1.png", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 9, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "2.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 10, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "5.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 11, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "8.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 12, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "7.jpg", farm: "Peternakan Al-Amin", rating: 4 },
-    { id: 13, name: "Kambing Boer (Ukuran Sedang)", price: "Rp. 3.000.000", image: "1.png", farm: "Peternakan Al-Amin", rating: 4 },
-    // Tambahkan lebih banyak produk jika diperlukan
-  ];
-
+  const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 12;
+  const navigate = useNavigate(); // Hook navigate untuk navigasi
+
+  // Fetch products from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Token tidak ditemukan");
+
+        const response = await api.get("api/products/products", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProducts(response.data);
+      } catch (error) {
+        console.error("Gagal mengambil data produk:", error.response?.data || error.message);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // Hitung total halaman
   const totalPages = Math.ceil(products.length / productsPerPage);
@@ -35,31 +40,22 @@ function Content() {
     setCurrentPage(pageNumber);
   };
 
-  const [images, setImages] = useState({});
-
-  useEffect(() => {
-    const loadImages = async () => {
-      const importedImages = import.meta.glob('../../../assets/imgs/*.{png,jpg,jpeg,svg}');
-      const imageEntries = await Promise.all(
-        Object.entries(importedImages).map(async ([path, importFunc]) => {
-          const module = await importFunc();
-          const fileName = path.replace('../../../assets/imgs/', ''); // Sesuaikan nama file
-          return [fileName, module.default];
-        })
-      );
-      setImages(Object.fromEntries(imageEntries));
-    };
-
-    loadImages();
-  }, []);
+  // Fungsi untuk menangani klik produk dan pergi ke halaman detail
+  const handleProductClick = (productId) => {
+    navigate(`/detailproduk/${productId}`); // Mengarahkan ke halaman detail produk dengan ID produk
+  };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg max-w-6xl flex-1 ">
+    <div className="bg-white p-4 rounded-lg shadow-lg max-w-6xl flex-1">
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {currentProducts.map((product) => (
-          <div key={product.id} className="bg-gray-50 rounded-lg p-4 shadow-md">
+          <div
+            key={product.id}
+            className="bg-gray-50 rounded-lg p-4 shadow-md cursor-pointer" // Menambahkan cursor-pointer agar terlihat klik-able
+            onClick={() => handleProductClick(product.id)} // Menambahkan event handler untuk klik
+          >
             <img
-              src={images[product.image]}
+              src={`http://localhost:5000/${product.imageUrl}`} // Sesuaikan jika URL-nya berbeda
               alt={product.name}
               className="w-full h-40 object-cover rounded-lg mb-4"
             />
@@ -72,17 +68,19 @@ function Content() {
             </div>
           </div>
         ))}
-        
       </div>
 
       {/* Pagination */}
       <div className="flex justify-center mt-6 space-x-2">
-        {/* Tombol untuk setiap halaman */}
         {[...Array(totalPages)].map((_, index) => (
           <button
             key={index + 1}
             onClick={() => goToPage(index + 1)}
-            className={`px-3 py-1 rounded ${currentPage === index + 1 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            className={`px-3 py-1 rounded ${
+              currentPage === index + 1
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}
           >
             {index + 1}
           </button>

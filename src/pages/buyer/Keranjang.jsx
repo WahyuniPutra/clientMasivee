@@ -1,181 +1,155 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import api from "../../utils/api";
 
 function CartPage() {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      farm: "Peternakan Al-Amin",
-      name: "Kambing Boer (Ukuran Sedang)",
-      price: 3000000,
-      quantity: 1,
-      image: "2.jpg",
-      isSelected: false,
-    },
-    {
-      id: 2,
-      farm: "Peternakan Pak Simin",
-      name: "Kambing Boer (Ukuran Kecil)",
-      price: 2600000,
-      quantity: 1,
-      image: "7.jpg",
-      isSelected: false,
-    },
-    {
-      id: 3,
-      farm: "Peternakan Ibu Siti",
-      name: "Kambing Boer (Ukuran Besar)",
-      price: 6000000,
-      quantity: 1,
-      image: "5.jpg",
-      isSelected: false,
-    },
-  ]);
-  const [isSelectAll, setIsSelectAll] = useState(false);
-
-  const incrementQuantity = (id) => {
-    setCartItems(cartItems.map(item =>
-      item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-    ));
-  };
-
-  const decrementQuantity = (id) => {
-    setCartItems(cartItems.map(item => {
-      if (item.id === id) {
-        return item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : null;
-      }
-      return item;
-    }).filter(item => item !== null)); // Filter out items with quantity zero
-  };
-
-  const removeItem = (id) => {
-    setCartItems(cartItems.filter(item => item.id !== id));
-  };
-
-  const toggleSelectAll = () => {
-    const newSelectAll = !isSelectAll;
-    setIsSelectAll(newSelectAll);
-    setCartItems(cartItems.map(item => ({ ...item, isSelected: newSelectAll })));
-  };
-
-  const toggleSelectItem = (id) => {
-    setCartItems(cartItems.map(item => 
-      item.id === id ? { ...item, isSelected: !item.isSelected } : item
-    ));
-    setIsSelectAll(cartItems.every(item => item.id === id ? !item.isSelected : item.isSelected));
-  };
-
-  // Menghitung total item dan harga untuk item yang terpilih
-  const selectedItems = cartItems.filter(item => item.isSelected);
-  const selectedTotalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
-  const selectedTotalPrice = selectedItems.reduce((total, item) => total + item.price * item.quantity, 0);
-
-  // Total seluruh item untuk ditampilkan jika tidak ada yang dipilih
-  const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const totalPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-
-
-
-  const [images, setImages] = useState({});
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Mengimpor semua gambar secara asinkron
-    const loadImages = async () => {
-      const importedImages = import.meta.glob('../../assets/imgs/*.{png,jpg,jpeg,svg}');
-      const imageEntries = await Promise.all(
-        Object.entries(importedImages).map(async ([path, importFunc]) => {
-          const module = await importFunc();
-          const fileName = path.replace('../../assets/imgs/', ''); // Ambil nama file
-          return [fileName, module.default]; // module.default adalah URL gambar
-        })
-      );
-      setImages(Object.fromEntries(imageEntries)); // Simpan gambar dalam bentuk objek
+    const fetchCartItems = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Token tidak ditemukan");
+
+        const response = await api.get("api/cart/getcart", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCartItems(response.data);
+      } catch (error) {
+        console.error("Gagal mengambil data keranjang:", error.response?.data || error.message);
+      }
     };
 
-    loadImages();
+    fetchCartItems();
   }, []);
 
+  const calculateTotalPrice = () => {
+    return cartItems.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0
+    );
+  };
+
+  const handleUpdateQuantity = async (id, operation) => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Token tidak ditemukan");
+  
+      // Update quantity di backend
+      await api.put(
+        "api/cart/update",
+        { productId: id, operation }, // Kirim operation ("increment" atau "decrement")
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      // Update di frontend
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.product.id === id
+            ? {
+                ...item,
+                quantity: operation === "increment" ? item.quantity + 1 : item.quantity - 1,
+                totalPrice:
+                  operation === "increment"
+                    ? (item.quantity + 1) * item.product.price
+                    : (item.quantity - 1) * item.product.price,
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error("Gagal memperbarui jumlah produk:", error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const incrementQuantity = (id) => {
+    handleUpdateQuantity(id, "increment");
+  };
+  
+  const decrementQuantity = (id, currentQuantity) => {
+    if (currentQuantity > 1) {
+      handleUpdateQuantity(id, "decrement");
+    } else {
+      removeItem(id); // Hapus jika kuantitas = 1
+    }
+  };
+  
+
+  const removeItem = async (id) => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Token tidak ditemukan");
+
+      // Hapus produk di backend
+      await api.delete("api/cart/remove", {
+        data: { productId: id },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Hapus dari frontend
+      setCartItems((prev) => prev.filter((item) => item.product.id !== id));
+    } catch (error) {
+      console.error("Gagal menghapus produk:", error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="bg-gray-100 p-6 min-h-screen flex flex-col md:flex-row gap-6">
-      {/* Bagian Keranjang */}
-      <div className="flex-1">
-        <h1 className="text-2xl font-bold mb-4">Keranjang</h1>
-        
-        {/* Daftar Produk di Keranjang */}
-        <div className="bg-white p-4 rounded-lg shadow-lg mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked={isSelectAll} onChange={toggleSelectAll} />
-              <span className="font-semibold">Pilih Semua ({cartItems.length})</span>
-            </div>
-          </div>
-        </div>
+    <div className="bg-gray-100 p-6 min-h-screen">
+      <h1 className="text-2xl font-bold mb-6">Keranjang</h1>
 
-        {cartItems.map(item => (
-          <div key={item.id} className="bg-white p-4 rounded-lg shadow-lg mb-4 mt-4">
-            <div className="flex gap-4">
-              <input
-                type="checkbox"
-                className="mt-2"
-                checked={item.isSelected}
-                onChange={() => toggleSelectItem(item.id)}
-              />
-              <img src={images[item.image]} alt={item.name} className="w-24 h-24 object-cover rounded" />
-              <div className="flex-1">
-                <h3 className="font-semibold">{item.farm}</h3>
-                <p>{item.name}</p>
-                <p className="text-green-600 font-bold">Rp{item.price.toLocaleString()}</p>
-              </div>
-              <div className="flex flex-col items-center justify-between">
-                <div className="flex items-center">
-                  <button
-                    onClick={() => decrementQuantity(item.id)}
-                    className="px-2 py-1 bg-green-600 text-white rounded"
-                  >
-                    -
-                  </button>
-                  <span className="px-3">{item.quantity}</span>
-                  <button
-                    onClick={() => incrementQuantity(item.id)}
-                    className="px-2 py-1 bg-green-600 text-white rounded"
-                  >
-                    +
-                  </button>
-                </div>
-                <p className="text-gray-800 font-semibold">
-                  Rp{(item.price * item.quantity).toLocaleString()}
-                </p>
-              </div>
-              <button
-                onClick={() => removeItem(item.id)}
-                className="text-red-500 font-bold"
-              >
-                Hapus
-              </button>
-            </div>
+      {cartItems.map((item) => (
+        <div
+          key={item.product.id}
+          className="bg-white p-4 rounded-lg shadow-lg mb-4 flex items-center"
+        >
+          <img
+            src={`http://localhost:5000/${item.product.imageUrl}`}
+            alt={item.product.name}
+            className="w-24 h-24 object-cover rounded-lg mr-4"
+          />
+          <div className="flex-1">
+            <h2 className="font-bold">{item.product.name}</h2>
+            <p>Rp. {item.product.price.toLocaleString()}</p>
           </div>
-        ))}
-      </div>
-
-      {/* Ringkasan Transaksi */}
-      <div className="w-full md:w-1/3 mt-12">
-        <div className=" p-4 rounded-lg shadow-lg max-w-md">
-          <h2 className="text-xl font-semibold mb-4">Ringkasan Transaksi</h2>
-          <div className="flex justify-between mb-2">
-            <span>Total Produk Terpilih</span>
-            <span>({selectedItems.length > 0 ? selectedTotalItems : totalItems})</span>
+          <div className="flex items-center">
+            <button
+              className="px-4 py-2 bg-gray-200 rounded-l"
+              onClick={() => decrementQuantity(item.product.id, item.quantity)}
+              disabled={loading}
+            >
+              -
+            </button>
+            <span className="px-4">{item.quantity}</span>
+            <button
+              className="px-4 py-2 bg-gray-200 rounded-r"
+              onClick={() => incrementQuantity(item.product.id, item.quantity)}
+              disabled={loading}
+            >
+              +
+            </button>
           </div>
-          <div className="flex justify-between mb-4">
-            <span>Total Harga Terpilih</span>
-            <span className="font-semibold text-green-600">
-              Rp{(selectedItems.length > 0 ? selectedTotalPrice : totalPrice).toLocaleString()}
-            </span>
-          </div>
-          <button className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold">
-            Beli
+          <button
+            className="text-red-500 font-bold ml-4"
+            onClick={() => removeItem(item.product.id)}
+            disabled={loading}
+          >
+            Hapus
           </button>
         </div>
+      ))}
+
+      {/* Total Harga */}
+      <div className="mt-6 p-4 bg-white shadow-lg rounded-lg">
+        <h2 className="text-xl font-bold">Total Harga</h2>
+        <p className="text-lg font-semibold">
+          Rp. {calculateTotalPrice().toLocaleString()}
+        </p>
       </div>
     </div>
   );
