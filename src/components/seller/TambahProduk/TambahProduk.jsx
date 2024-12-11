@@ -1,6 +1,8 @@
 import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
-function AddOrderPage() {
+function AddProductPage() {
   const [formData, setFormData] = useState({
     productName: "",
     productImage: null,
@@ -8,6 +10,8 @@ function AddOrderPage() {
     weight: "",
     description: "",
   });
+  const [popupVisible, setPopupVisible] = useState(false); // Popup state
+  const navigate = useNavigate(); // Initialize navigate function
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,11 +22,39 @@ function AddOrderPage() {
     setFormData((prevData) => ({ ...prevData, productImage: e.target.files[0] }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logika untuk menambah pesanan di sini (misalnya simpan ke database atau tampilkan alert)
-    alert("Pesanan berhasil ditambahkan!");
-    console.log(formData);
+
+    // Membuat FormData untuk mengirim file gambar
+    const form = new FormData();
+    form.append("name", formData.productName);
+    form.append("description", formData.description);
+    form.append("price", formData.price);
+    form.append("weight", formData.weight);
+    form.append("imageUrl", formData.productImage);
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/products/products", form, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`, // Pastikan token ada di localStorage
+        },
+      });
+
+      // Menampilkan popup berhasil
+      setPopupVisible(true);
+
+      // Arahkan setelah beberapa detik
+      setTimeout(() => {
+        setPopupVisible(false); // Menyembunyikan popup
+        navigate("/produk"); // Arahkan ke halaman produk
+      }, 2000); // Popup muncul selama 2 detik
+
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error adding product:", error);
+      alert("Gagal menambahkan produk.");
+    }
   };
 
   return (
@@ -30,87 +62,85 @@ function AddOrderPage() {
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-3xl">
         <h2 className="text-2xl font-bold mb-6 text-gray-700">Tambah Produk</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Nama Produk */}
-            <div>
-              <label className="block text-gray-600 font-medium mb-2">Nama Produk</label>
-              <input
-                type="text"
-                name="productName"
-                value={formData.productName}
-                onChange={handleChange}
-                placeholder="Masukkan nama produk"
-                className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                required
-              />
-            </div>
-
-            {/* Gambar Produk */}
-            <div>
-              <label className="block text-gray-600 font-medium mb-2">Gambar Produk</label>
-              <input
-                type="file"
-                name="productImage"
-                onChange={handleImageChange}
-                className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                accept="image/*"
-              />
-            </div>
-
-            {/* Harga */}
-            <div>
-              <label className="block text-gray-600 font-medium mb-2">Harga</label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="Masukkan harga produk"
-                className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                required
-              />
-            </div>
-
-            {/* Berat */}
-            <div>
-              <label className="block text-gray-600 font-medium mb-2">Berat (gram)</label>
-              <input
-                type="number"
-                name="weight"
-                value={formData.weight}
-                onChange={handleChange}
-                placeholder="Masukkan berat produk"
-                className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                required
-              />
-            </div>
-
-            {/* Deskripsi Barang - Mengambil satu kolom penuh */}
-            <div className="md:col-span-2">
-              <label className="block text-gray-600 font-medium mb-2">Deskripsi Barang</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Masukkan deskripsi produk"
-                className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                rows="4"
-                required
-              />
-            </div>
+          {/* Form input */}
+          <div>
+            <label className="block text-gray-600 font-medium mb-2">Nama Produk</label>
+            <input
+              type="text"
+              name="productName"
+              value={formData.productName}
+              onChange={handleChange}
+              placeholder="Masukkan nama produk"
+              className="w-full border border-gray-300 rounded-md p-3"
+              required
+            />
           </div>
-
-          {/* Tombol Submit */}
+          <div>
+            <label className="block text-gray-600 font-medium mb-2">Gambar Produk</label>
+            <input
+              type="file"
+              name="productImage"
+              onChange={handleImageChange}
+              className="w-full border border-gray-300 rounded-md p-2"
+              accept="image/*"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-600 font-medium mb-2">Harga</label>
+            <input
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              placeholder="Masukkan harga produk"
+              className="w-full border border-gray-300 rounded-md p-3"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-600 font-medium mb-2">Berat (gram)</label>
+            <input
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleChange}
+              placeholder="Masukkan berat produk"
+              className="w-full border border-gray-300 rounded-md p-3"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-600 font-medium mb-2">Deskripsi Produk</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Masukkan deskripsi produk"
+              className="w-full border border-gray-300 rounded-md p-3"
+              rows="4"
+              required
+            />
+          </div>
           <button
             type="submit"
-            className="w-full bg-green-400 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition duration-200"
+            className="w-full bg-green-400 text-white font-semibold py-3 rounded-md hover:bg-green-700"
           >
             Tambah Produk
           </button>
         </form>
       </div>
+
+      {/* Popup untuk konfirmasi */}
+      {popupVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h3 className="text-center text-xl font-semibold">Produk Berhasil Ditambahkan!</h3>
+            <p className="text-center mt-4">Akan diarahkan ke halaman produk...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default AddOrderPage;
+export default AddProductPage;

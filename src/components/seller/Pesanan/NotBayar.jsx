@@ -1,37 +1,12 @@
-import { useState, useEffect } from "react";
+
 const Unpaid = () => {
     
 const orders = [
-    {
-      id: 1,
-      productImage: "2.jpg", // Ganti dengan path gambar yang sesuai
-      productName: "Kambing Boer",
-      total: "Rp14.026.000",
-      status: "Belum Bayar",
-      buyer: "Wahyu",
-      deliveryService: "Reguler (Cashless)",
-      statusColor: "text-red-500"
-    },
+    
 
   ];
 
-  const [images, setImages] = useState({});
 
-  useEffect(() => {
-    const loadImages = async () => {
-      const importedImages = import.meta.glob('../../../assets/imgs/*.{png,jpg,jpeg,svg}');
-      const imageEntries = await Promise.all(
-        Object.entries(importedImages).map(async ([path, importFunc]) => {
-          const module = await importFunc();
-          const fileName = path.replace('../../../assets/imgs/', ''); // Sesuaikan nama file
-          return [fileName, module.default];
-        })
-      );
-      setImages(Object.fromEntries(imageEntries));
-    };
-
-    loadImages();
-  }, []);
 
   return (
     <div className="max-w-6xl">
@@ -50,7 +25,7 @@ const orders = [
         {orders.map((order) => (
           <tr key={order.id} className="border-b">
             <td className="py-4 px-2 flex items-center space-x-4">
-              <img src={images[order.productImage]} alt={order.productName} className="w-20 h-20 rounded" />
+              <img src={[order.productImage]} alt={order.productName} className="w-20 h-20 rounded" />
               <span>{order.productName}</span>
             </td>
             <td className="py-4 px-2 text-left">{order.total}</td>

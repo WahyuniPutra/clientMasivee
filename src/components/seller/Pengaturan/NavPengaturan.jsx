@@ -14,9 +14,9 @@ const StoreSettingsNavbar = () => {
   ];
 
   return (
-    <div className="p-4 bg-white">
+    <div className="p-4 bg-gray-100 ">
       <h2 className="text-2xl font-bold mb-4">Pengaturan Toko</h2>
-      <div className="bg-gray-100 rounded-md shadow">
+      <div className="bg-gray-300 rounded-md shadow">
         <nav className="flex space-x-4 p-2">
           {tabs.map((tab) => (
             <Link

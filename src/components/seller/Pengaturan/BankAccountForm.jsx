@@ -1,5 +1,6 @@
 import  { useState } from "react";
 
+// eslint-disable-next-line react/prop-types
 function BankAccountForm({ onAddBankAccount }) {
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");

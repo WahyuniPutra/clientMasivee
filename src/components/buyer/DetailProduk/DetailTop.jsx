@@ -7,6 +7,31 @@ function ProductPage() {
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
+ 
+  const [imageUrl, setImageUrl] = useState('');
+
+  useEffect(() => {
+    const fetchStorePhoto = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Token tidak ditemukan");
+
+        const { data } = await api.get('/api/store/getstores', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const fotoseller = data.data[0]; // Ambil item pertama dari array
+        const backendUrl = "http://localhost:5000"; // URL backend
+        setImageUrl(`${backendUrl}${fotoseller.imageUrl}`);
+      } catch (error) {
+        console.error("Failed to fetch store photo:", error);
+        setImageUrl('/default-imageUrl.png'); // Fallback ke default image jika gagal
+      }
+    };
+
+    fetchStorePhoto();
+  }, []);
 
   useEffect(() => {
     const fetchProductDetail = async () => {
@@ -25,27 +50,82 @@ function ProductPage() {
 
     fetchProductDetail();
   }, [productId]);
-
   const incrementQuantity = () => {
-    if (quantity < product?.stock) {
+    if (quantity < product.stock) {
       setQuantity(quantity + 1);
     }
   };
-
+  
   const decrementQuantity = () => {
     if (quantity > 1) {
       setQuantity(quantity - 1);
     }
   };
+  
 
-  const handleAddToCart = () => {
-    // Simpan produk ke keranjang (gunakan API jika ingin tersimpan di backend)
-    setIsPopupVisible(true);
-    setTimeout(() => {
-      setIsPopupVisible(false);
-    }, 3000);
+  const handleAddToCart = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Token tidak ditemukan");
+  
+      // Periksa apakah item sudah ada di keranjang
+      const existingCartItem = cartItems.find((item) => item.productId === product.id);
+  
+      const newQuantity = existingCartItem ? existingCartItem.quantity + quantity : quantity;
+  
+      // Kirim permintaan ke API addToCart
+      const response = await api.post(
+        "/api/cart/add",
+        {
+          productId: product.id,
+          quantity: newQuantity,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      console.log(response.data.message); // Debug pesan sukses
+      setIsPopupVisible(true);
+      setTimeout(() => {
+        setIsPopupVisible(false);
+      }, 3000);
+  
+      // Update state cartItems
+      if (existingCartItem) {
+        setCartItems((prevItems) =>
+          prevItems.map((item) =>
+            item.productId === product.id ? { ...item, quantity: newQuantity } : item
+          )
+        );
+      } else {
+        setCartItems((prevItems) => [...prevItems, { productId: product.id, quantity: newQuantity }]);
+      }
+    } catch (error) {
+      console.error("Gagal menambahkan ke keranjang:", error.response?.data || error.message);
+    }
   };
+  
 
+  // useEffect(() => {
+  //   const fetchCartItems = async () => {
+  //     try {
+  //       const token = localStorage.getItem("token");
+  //       if (!token) throw new Error("Token tidak ditemukan");
+  
+  //       const response = await api.get("/api/cart", {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
+  
+  //       setCartItems(response.data.cartItems);
+  //     } catch (error) {
+  //       console.error("Gagal mengambil keranjang:", error.response?.data || error.message);
+  //     }
+  //   };
+  
+  //   fetchCartItems();
+  // }, []);
+  
   if (!product) {
     return <div>Loading...</div>;
   }
@@ -80,25 +160,29 @@ function ProductPage() {
           <div className="text-2xl font-bold text-green-600 mb-4">
             Rp. {product.price}
           </div>
-
+          
+            
           <div className="flex items-center mb-4">
             <span className="font-semibold mr-2">Kuantitas:</span>
             <div className="flex items-center">
-              <button
-                onClick={decrementQuantity}
-                className="px-3 py-1 bg-gray-200 text-gray-700 rounded-l"
-              >
-                -
-              </button>
-              <span className="px-4 border-t border-b border-gray-200">
-                {quantity}
-              </span>
-              <button
-                onClick={incrementQuantity}
-                className="px-3 py-1 bg-gray-200 text-gray-700 rounded-r"
-              >
-                +
-              </button>
+            <div className="flex items-center">
+                <button
+                  onClick={decrementQuantity}
+                  className="px-3 py-1 bg-transparent text-gray-700 rounded-l"
+                >
+                  
+                </button>
+                <span className="px-4 border-t border-b border-gray-200">
+                  {quantity}
+                </span>
+                <button
+                  onClick={incrementQuantity}
+                  className="px-3 py-1 bg-transparent text-gray-700 rounded-r"
+                >
+                  
+                </button>
+              </div>
+
             </div>
             <span className="ml-4 text-gray-500">Stok: {product.stock}</span>
           </div>
@@ -111,6 +195,18 @@ function ProductPage() {
               Tambah ke Keranjang
             </button>
           </div>
+          <div className="flex items-center bg-gray-100 p-4 rounded-lg">
+          <img src={imageUrl || '/default-imageUrl.png'} alt="Profile" className="w-10 h-10 rounded-full mb-2" />
+          <h3 className="text-black font-semibold">Toko: {product.storeName}</h3>
+              <div className="flex gap-2 mt-2">
+                <button className="bg-green-500 text-white px-3 py-1 rounded-lg text-sm">
+                  Chat Sekarang
+                </button>
+                <button className="bg-white border border-green-500 text-green-500 px-3 py-1 rounded-lg text-sm">
+                  Kunjungi Toko
+                </button>
+              </div>
+              </div>
         </div>
       </div>
     </div>

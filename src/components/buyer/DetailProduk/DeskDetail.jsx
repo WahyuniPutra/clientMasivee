@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; // Import useParams untuk mengambil parameter dari URL
+import api from '../../../utils/api';
 
 function ProductDescription() {
   const { productId } = useParams(); // Ambil parameter idproduk dari URL
@@ -9,9 +10,15 @@ function ProductDescription() {
     // Fungsi untuk mengambil data produk berdasarkan idproduk
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`/api/products/products/${productId}`); // Ganti dengan endpoint API Anda
-        const data = await response.json();
-        setProduct(data); // Simpan data produk ke state
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Token tidak ditemukan");
+
+        const response = await api.get(`api/products/products/${productId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProduct(response.data);
+       
+  
       } catch (error) {
         console.error('Error fetching product data:', error);
       }

@@ -1,6 +1,6 @@
 import axios from "axios";
 import  { useState } from "react";
-console.log(localStorage.getItem("token"));
+
 
 function PendaftaranToko() {
   const [formData, setFormData] = useState({

@@ -1,11 +1,30 @@
+import { useEffect, useState } from "react";
 
-
-function HalamanProduct() {
+  const FeaturedProducts = () => {
+    const [images, setImages] = useState({});
+  
+    useEffect(() => {
+      // Menggunakan import.meta.glob untuk memuat semua gambar dalam folder assets/imgs
+      const loadImages = async () => {
+        const importedImages = import.meta.glob('../../../assets/imgs/*.{png,jpg,jpeg}');
+        const imageEntries = await Promise.all(
+          Object.entries(importedImages).map(async ([path, importFunc]) => {
+            const module = await importFunc();
+            const fileName = path.split('/').pop(); // Dapatkan nama file saja
+            return [fileName, module.default];
+          })
+        );
+        setImages(Object.fromEntries(imageEntries));
+      };
+  
+      loadImages();
+    }, []);
+  
   return (
     <div className="bg-pink-100 min-h-96 mb-10">
       <div className="relative">
         <img
-          src="https://placekitten.com/1200/400" // Ganti dengan URL gambar kambing yang sesuai
+          src={images["10.jpeg"]} // Ganti dengan URL gambar kambing yang sesuai
           alt="Background"
           className="w-full h-[400px] object-cover"
         />
@@ -23,4 +42,4 @@ function HalamanProduct() {
   );
 }
 
-export default HalamanProduct;
+export default FeaturedProducts;

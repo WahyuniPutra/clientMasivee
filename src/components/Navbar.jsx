@@ -10,10 +10,12 @@ const Navbar = () => {
     const savedStatus = localStorage.getItem("hasStore");
     return savedStatus === "true";
   });
+  const [fullName, setFullName] = useState("Hijau Mandala"); // State untuk nama pengguna
+  const [profileImage, setProfileImage] = useState(""); // State untuk avatar pengguna
 
   const menuRef = useRef(null);
 
-  // Memuat gambar
+  // Memuat gambar statis
   useEffect(() => {
     const loadImages = async () => {
       const importedImages = import.meta.glob("../assets/imgs/*.{png,jpg,jpeg,svg}");
@@ -53,6 +55,28 @@ const Navbar = () => {
     fetchStoreStatus();
   }, []);
 
+  // Fetch user dashboard untuk nama dan gambar
+  useEffect(() => {
+    const fetchUserDashboard = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Token tidak ditemukan");
+
+        const response = await api.get("/api/dashboard/dapat", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const dashboardData = response.data.data;
+        setFullName(dashboardData.full_name); // Set nama pengguna
+        setProfileImage(dashboardData.avatar); // Set avatar
+      } catch (error) {
+        console.error("Gagal mengambil data user:", error.response?.data || error.message);
+      }
+    };
+
+    fetchUserDashboard();
+  }, []);
+
   // Handle click outside untuk menutup menu
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -71,10 +95,12 @@ const Navbar = () => {
     <div className="relative">
       <div className="flex items-center justify-between p-4 bg-[#1C464F] text-white shadow-md">
         {/* Logo dan Nama Brand */}
-        <div className="flex items-center space-x-2">
-          <img src={images["9.png"]} alt="Logo" className="h-8 w-8" />
-          <span className="text-lg font-bold">KambingFresh</span>
-        </div>
+        <a href="/utama">
+          <div className="flex items-center space-x-2">
+            <img src={images["logo.png"]} alt="Logo" className="h-8 w-8" />
+            <span className="text-lg font-bold">KambingFresh</span>
+          </div>
+        </a>
 
         {/* Search Bar */}
         <div className="flex items-center w-full max-w-lg px-4 py-2 bg-gray-200 rounded-full">
@@ -107,9 +133,13 @@ const Navbar = () => {
 
           {/* Nama Pengguna */}
           <div className="flex items-center space-x-2">
-            <img src={images["7.jpg"]} alt="User Avatar" className="w-8 h-8 rounded-full" />
+            <img
+              src={profileImage ? `http://localhost:5000/${profileImage}` : "default_image_url"} // Gunakan default jika avatar kosong
+              alt="User Avatar"
+              className="w-8 h-8 rounded-full"
+            />
             <a href="/profilebuyyer">
-              <span className="text-sm">Hijau Mandala</span>
+              <span className="text-sm">{fullName}</span>
             </a>
           </div>
 

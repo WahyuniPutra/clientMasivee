@@ -1,24 +1,30 @@
 import { useState, useEffect } from "react";
-
+import api from "../utils/api";
 const Navbar = () => {
-
-  const [images, setImages] = useState({});
+  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
-    const loadImages = async () => {
-      const importedImages = import.meta.glob('../assets/imgs/*.{png,jpg,jpeg,svg}');
-      const imageEntries = await Promise.all(
-        Object.entries(importedImages).map(async ([path, importFunc]) => {
-          const module = await importFunc();
-          const fileName = path.replace('../assets/imgs/', ''); // Sesuaikan nama file
-          return [fileName, module.default];
-        })
-      );
-      setImages(Object.fromEntries(imageEntries));
+    const fetchStorePhoto = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Token tidak ditemukan");
+
+        const { data } = await api.get('/api/store/getstores', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const fotoseller = data.data[0]; // Ambil item pertama dari array
+        const backendUrl = "http://localhost:5000"; // URL backend
+        setImageUrl(`${backendUrl}${fotoseller.imageUrl}`);
+      } catch (error) {
+        console.error("Failed to fetch store photo:", error);
+        setImageUrl('/default-imageUrl.png'); // Fallback ke default image jika gagal
+      }
     };
 
-    loadImages();
+    fetchStorePhoto();
   }, []);
+
   return (
     <nav className="bg-[#1C464F] px-6 py-4 flex items-center justify-between">
       {/* Logo and Title */}
@@ -42,11 +48,7 @@ const Navbar = () => {
       <div className="flex items-center space-x-4">
         <button className="text-white">🔔</button>
         <div className="flex items-center text-white">
-          <img 
-            src={images["5.jpg"]} 
-            alt="profile" 
-            className="w-8 h-8 rounded-full mr-2"
-          />
+          <img src={imageUrl || '/default-imageUrl.png'} alt="Profile" className="w-10 h-10 rounded-full mb-2" />
           <span>Hijau Mandala</span>
         </div>
       </div>

@@ -18,7 +18,7 @@ import PerluDikirim from './components/seller/Pesanan/PerluDikirim'
 import Dikirim from './components/seller/Pesanan/Dikirim'
 import Selesai from './components/seller/Pesanan/Selesai'
 import DetailPesanan from './components/seller/Pesanan/DetailPesanan'
-import Produk from './components/seller/Produk/Produk'
+
 import ProdukLayout from './layout/Seller/ProdukLayout';
 import ChatLayout from './layout/Seller/ChatLayout'
 import PengaturanLayout from './layout/Seller/PengaturanLayout'
@@ -37,7 +37,7 @@ import Pemesanan from './layout/PemesananLay'
 import AlamatBuyyerLay from './layout/ProfileBuyyer/AlamatBuyyerLay'
 import PesananBuyyerLay from './layout/ProfileBuyyer/PesananBuyyerLay'
 import PesananBuyyer from './components/buyer/ProfileBuyyer/PesananBuyyer'
-
+import Editproduk from "./layout/Seller/EditProduk"
 
 
 function App() {
@@ -51,7 +51,7 @@ function App() {
                 </Route>
                 {/* Rute BuyerLayout */}
                 <Route element={<BuyerLayout />}>
-                    <Route path="/utama" element={<div />}/>
+                    <Route path="/utama" element={<div   />}/>
                 </Route>
                 {/* Route HalLayout */}
                 <Route element={<HalLayout />}>
@@ -116,7 +116,7 @@ function App() {
 
                 {/* Produk Seller */}
                 <Route element={<ProdukLayout />}>
-                  <Route path="/produk" element={<Produk />}/>
+                  <Route path="/produk" element={<div />}/>
                 </Route>
 
                 {/* ChatLayoutseller */}
@@ -137,6 +137,10 @@ function App() {
 
                 <Route element={<TambahProdukLayout />}>
                   <Route path="/tambahproduk" element={<div />}/>
+                </Route>
+
+                <Route element={<Editproduk />}>
+                  <Route path="/editproduk/:id" element={<div />}/>
                 </Route>
 
                 <Route element={<EdukasiLayout />}>

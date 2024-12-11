@@ -13,8 +13,8 @@ const BuyerLayout = () => {
             
             {/* <Outlet /> Halaman login akan dirender di sini */}
             <Header />
-            <Product />
-            <Diskon />
+            <Product  />
+            <Diskon  />
             {/* <Unggulan /> */}
 
             <Footer />

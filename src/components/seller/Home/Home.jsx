@@ -1,44 +1,11 @@
-import { useEffect, useState } from "react";
 
 const KambingFresh = () => {
   // Data produk disimpan dalam array
   const products = [
-    {
-      id: 1,
-      name: "Kambing Jawa Randu",
-      price: "Rp2.100.000",
-      image: "4.jpg",
-    },
-    {
-      id: 2,
-      name: "Susu Kambing",
-      price: "Rp300",
-      image: "5.jpg",
-    },
-    {
-      id: 3,
-      name: "Daging Kambing Premium",
-      price: "Rp144.000",
-      image: "6.jpg",
-    },
+ 
   ];
-  const [images, setImages] = useState({});
+ 
 
-  useEffect(() => {
-    const loadImages = async () => {
-      const importedImages = import.meta.glob('../../../assets/imgs/*.{png,jpg,jpeg,svg}');
-      const imageEntries = await Promise.all(
-        Object.entries(importedImages).map(async ([path, importFunc]) => {
-          const module = await importFunc();
-          const fileName = path.replace('../../../assets/imgs/', ''); // Sesuaikan nama file
-          return [fileName, module.default];
-        })
-      );
-      setImages(Object.fromEntries(imageEntries));
-    };
-
-    loadImages();
-  }, []);
 
   return (
     <div className="flex flex-col space-y-6 p-6 bg-white rounded-md shadow-md max-h-fit max-w-6xl">
@@ -88,7 +55,7 @@ const KambingFresh = () => {
           {products.map((product) => (
             <div key={product.id} className="flex items-center justify-between px-10 py-2 border-t border-gray-200">
               <div className="flex items-center space-x-20">
-                <img src={images[product.image]} alt={product.name} className="w-20 h-20 rounded" />
+                <img src={[product.image]} alt={product.name} className="w-20 h-20 rounded" />
                 <p className="font-semibold">{product.name}</p>
               </div>
               <div className="flex items-baseline">
