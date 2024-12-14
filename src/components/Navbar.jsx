@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { IoIosSearch, IoMdCart, IoMdNotifications } from "react-icons/io";
+import { useEffect, useRef, useState } from "react";
 import { AiTwotoneShop } from "react-icons/ai";
+import { IoIosSearch, IoMdCart, IoMdNotifications } from "react-icons/io";
 import api from "../utils/api"; // Pastikan path sesuai
 
 const Navbar = () => {
@@ -18,7 +18,9 @@ const Navbar = () => {
   // Memuat gambar statis
   useEffect(() => {
     const loadImages = async () => {
-      const importedImages = import.meta.glob("../assets/imgs/*.{png,jpg,jpeg,svg}");
+      const importedImages = import.meta.glob(
+        "../assets/imgs/*.{png,jpg,jpeg,svg}"
+      );
       const imageEntries = await Promise.all(
         Object.entries(importedImages).map(async ([path, importFunc]) => {
           const module = await importFunc();
@@ -46,7 +48,10 @@ const Navbar = () => {
         setHasStore(response.data.hasStore);
         localStorage.setItem("hasStore", response.data.hasStore);
       } catch (error) {
-        console.error("Gagal mengambil status toko:", error.response?.data || error.message);
+        console.error(
+          "Gagal mengambil status toko:",
+          error.response?.data || error.message
+        );
         setHasStore(false);
         localStorage.removeItem("hasStore");
       }
@@ -70,7 +75,10 @@ const Navbar = () => {
         setFullName(dashboardData.full_name); // Set nama pengguna
         setProfileImage(dashboardData.avatar); // Set avatar
       } catch (error) {
-        console.error("Gagal mengambil data user:", error.response?.data || error.message);
+        console.error(
+          "Gagal mengambil data user:",
+          error.response?.data || error.message
+        );
       }
     };
 
@@ -134,7 +142,11 @@ const Navbar = () => {
           {/* Nama Pengguna */}
           <div className="flex items-center space-x-2">
             <img
-              src={profileImage ? `http://localhost:5000/${profileImage}` : "default_image_url"} // Gunakan default jika avatar kosong
+              src={
+                profileImage
+                  ? `http://localhost:5000/${profileImage}`
+                  : "https://idnpacific.com/wp-content/uploads/2022/06/Kosong-dan-Simpel.png"
+              } // Gunakan default jika avatar kosong
               alt="User Avatar"
               className="w-8 h-8 rounded-full"
             />
@@ -152,7 +164,9 @@ const Navbar = () => {
             >
               {hasStore ? (
                 <>
-                  <p className="text-center text-gray-700 font-medium">Toko Anda</p>
+                  <p className="text-center text-gray-700 font-medium">
+                    Toko Anda
+                  </p>
                   <a href="/home">
                     <button className="bg-blue-500 text-white font-bold py-2 px-4 mt-4 rounded-md w-full">
                       Masuk Toko
@@ -161,7 +175,9 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <p className="text-center text-gray-700 font-medium">Anda Belum Memiliki Toko</p>
+                  <p className="text-center text-gray-700 font-medium">
+                    Anda Belum Memiliki Toko
+                  </p>
                   <a href="/pendaftarantoko">
                     <button className="bg-green-500 text-white font-bold py-2 px-4 mt-4 rounded-md w-full">
                       Daftar Toko
